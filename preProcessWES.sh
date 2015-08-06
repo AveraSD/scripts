@@ -13,8 +13,6 @@ read1=$read1
 read2=$read2
 alignment_dir=$alignment_dir
 
-mkdir -p /data/s3/averafastq/$patient
-mkdir -p /data/s3/averapatients/$patient/bam
 mkdir -p "$alignment_dir"
 
 ## reference files
@@ -26,23 +24,31 @@ bed="/data/database/GATK/beds/truseq_exome_targeted_regions.hg19.bed"
 ## align to hg19
 bwa mem -M -t $cpu -R $RGR $bwa_index $read1 $read2 \
 | samblaster --splitterFile >(samtools view -S -u /dev/stdin \
-| sambamba sort -t $cpu -m 25G --tmpdir /tmp -o $alignment_dir/$patient\_$sample\_WES_sorted.bam /dev/stdin) \
+| sambamba sort -t $cpu -m 10G --tmpdir /tmp -o $alignment_dir/$patient\_$sample\_WES_sorted.bam /dev/stdin) \
 --discordantFile >(samtools view -S -u /dev/stdin \
-| sambamba sort -t $cpu -m 25G --tmpdir /tmp -o $alignment_dir/$patient\_$sample\_WES_sorted.bam /dev/stdin) \
+| sambamba sort -t $cpu -m 10G --tmpdir /tmp -o $alignment_dir/$patient\_$sample\_WES_sorted.bam /dev/stdin) \
 | samtools view -S -u /dev/stdin \
-| sambamba sort -t $cpu -m 25G --tmpdir /tmp -o $alignment_dir/$patient\_$sample\_WES_sorted.bam /dev/stdin
+| sambamba sort -t $cpu -m 10G --tmpdir /tmp -o $alignment_dir/$patient\_$sample\_WES_sorted.bam /dev/stdin
 
 ## mark duplicates
 sambamba markdup -t $cpu $alignment_dir/$patient\_$sample\_WES_sorted.bam $alignment_dir/$patient\_$sample\_WES_dedup.bam
 
 ## index the bam file
-sambamba index -t $cpu $alignment_dir/$patient\_$sample\_WES_dedup.bam
+samtools index  $alignment_dir/$patient\_$sample\_WES_dedup.bam
 
 ## realign with abra
 java -Xmx4G -jar `which abra.jar` \
 --in $alignment_dir/$patient\_$sample\_WES_dedup.bam \
 --out $alignment_dir/$patient\_$sample\_WES_realigned.bam \
---ref $ref \
+--ref $hg19_reference \
 --targets $bed \
---threads 8 \
---working /tmp/abra_temp_dir > abra.log 2>&1
+--threads $cpu \
+--working /tmp/$patient\_$sample\_abra_temp_dir > $patient\_$sample\_abra.log 2>&1
+
+## sort and index again
+sambamba sort -t $cpu -m 10G --tmpdir /tmp -o $alignment_dir/$patient\_$sample\_WES_realigned_sorted.bam $alignment_dir/$patient\_$sample\_WES_realigned.bam
+samtools index $alignment_dir/$patient\_$sample\_WES_realigned_sorted.bam
+
+rm $alignment_dir/$patient\_$sample\_WES_sorted.bam
+rm $alignment_dir/$patient\_$sample\_WES_dedup.bam
+rm $alignment_dir/$patient\_$sample\_WES_realigned.bam

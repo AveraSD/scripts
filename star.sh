@@ -1,15 +1,30 @@
 #!/bin/bash
+module load star/2.4.2a
 
-read1=/data/s3/averafastq/everything_else/T47D-Dnase_S5_1.fastq.gz
-read2=/data/s3/averafastq/everything_else/T47D-Dnase_S5_2.fastq.gz
+sample=$sample
+read1=$read1
+read2=$read2
+alignment_dir=$alignment_dir
+refgtf=$refgtf
+
+mkdir -p "$alignment_dir"/$sample
+
+cpu=$(grep -c "processor" /proc/cpuinfo)
 genomeDir=/data/database/Homo_sapiens/UCSC/hg19/star_2.4.2a_genome
-refgtf=/data/database/Homo_sapiens/UCSC/hg19/Annotation/Genes/genes.gtf
-threads=32
+
 rgid="1234"
-rgsm="NA18238"
+rgsm=$(echo $sample)
 rgpl="ILLUMINA"
 rglb="TrueSeq"
 scratch=/tmp
+
+# make sure temp is empty
+if [ -d $scratch/$rgsm ]
+  then
+    rm -rf $scratch/$rgsm
+fi
+
+mkdir -p $scratch/$rgsm && cd $scratch/$rgsm
 
 STAR \
 	--genomeDir $genomeDir \
@@ -26,11 +41,15 @@ STAR \
 	--outSAMunmapped Within \
 	--outSAMattrRGline ID:$rgid SM:$rgsm PL:$rgpl LB:$rglb \
 	--outSAMstrandField intronMotif \
-	--runThreadN $threads \
+	--runThreadN $cpu \
 	--chimSegmentMin 25 \
 	--chimJunctionOverhangMin 25 \
-	--outTmpDir $scratch/$rgsm
+	--outFileNamePrefix $sample.
 
+cp $scratch/$rgsm/* $alignment_dir/$sample/
+
+#clean up
+rm -rf $scratch/$sample
 rm -rf $scratch/$rgsm
 
 exit 0

@@ -12,16 +12,14 @@ module load samblaster
 patient='CCD1_53'
 sample='tumor' # blood or tumor
 
-mkdir -p /data/storage/adam/patients/$patient
-mkdir -p /data/storage/adam/patients/$patient/bam
-mkdir -p /data/storage/adam/patients/$patient/vcf
-mkdir -p /data/storage/adam/patients/$patient/recal
+mkdir -p /data/s3/averapatients/$patient/alignments
+mkdir -p /data/s3/averapatients/$patient/gatk_vcf
+mkdir -p /data/s3/averapatients/$patient/gatk_recal
 
 ## patient file directories
-sample_dir="/data/s3/averafastq/patients/$patient"
-alignment_dir="/data/storage/adam/patients/$patient/bam"
-variant_dir="/data/storage/adam/patients/$patient/vcf"
-recal_dir="/data/storage/adam/patients/$patient/recal"
+alignment_dir="/data/s3/averapatients/$patient/alignments"
+variant_dir="/data/s3/averapatients/$patient/gatk_vcf"
+recal_dir="/data/s3/averapatients/$patient/gatk_recal"
 
 ## reference files
 bwa_index="/data/database/Homo_sapiens/UCSC/hg19/Sequence/BWAIndex/genome.fa"
@@ -36,31 +34,26 @@ omni="/data/database/GATK/hg19/1000G_omni2.5.hg19.vcf"
 KG="/data/database/GATK/hg19/1000G_phase1.snps.high_confidence.hg19.vcf"
 
 #java -Xmx16g -Djava.io.tmpdir=/tmp -jar `which GenomeAnalysisTK.jar` \
--T BaseRecalibrator -nct 8 \
--R $hg19_reference \
--I $alignment_dir/$patient\_$sample\_WES_realigned.bam  \
--o $alignment_dir/$patient\_$sample\_gatk_recal_data.table \
--L $bed \
--ip 100 \
--knownSites $dbsnp \
--knownSites $mills \
--knownSites $g1000
+#-T BaseRecalibrator -nct 8 \
+#-R $hg19_reference \
+#-I $alignment_dir/$patient\_$sample\_WES_realigned_sorted.bam \
+#-o /tmp/$patient\_$sample\_gatk_recal_data.table \
+#-L $bed \
+#-ip 100 \
+#-rf BadCigar \
+#-knownSites $dbsnp \
+#-knownSites $mills \
+#-knownSites $g1000
 
-java -Xmx16g -Djava.io.tmpdir=/tmp -jar `which GenomeAnalysisTK.jar` \
--T PrintReads -nct 8 \
--R $hg19_reference \
--I $alignment_dir/$patient\_$sample\_gatk_realigned.bam \
--BQSR $alignment_dir/$patient\_$sample\_gatk_recal_data.table \
--o $alignment_dir/$patient\_$sample\_gatk_recal.bam
+#java -Xmx16g -Djava.io.tmpdir=/tmp -jar `which GenomeAnalysisTK.jar` \
+#-T PrintReads -nct 8 \
+#-R $hg19_reference \
+#-I $alignment_dir/$patient\_$sample\_WES_realigned_sorted.bam \
+#-BQSR /tmp/$patient\_$sample\_gatk_recal_data.table \
+#-o /tmp/$patient\_$sample\_gatk_recal.bam
 
-rm $alignment_dir/$patient\_$sample\_gatk.intervals
-rm $alignment_dir/$patient\_$sample\_gatk_realigned.bam
-rm $alignment_dir/$patient\_$sample\_gatk_realigned.bai
-rm $alignment_dir/$patient\_$sample\_gatk_recal_data.table
-
-## index the bam file
-java -Xmx16g -jar `which BuildBamIndex.jar` \
-I=$alignment_dir/dedup_$patient\_$sample\_gatk_recal.bam
+#rm /tmp/$patient\_$sample\_gatk.intervals
+#rm /tmp/$patient\_$sample\_gatk_recal_data.table
 
 ## call variants
 java -Xmx16g -jar `which GenomeAnalysisTK.jar` \
@@ -68,19 +61,21 @@ java -Xmx16g -jar `which GenomeAnalysisTK.jar` \
 -nct 8 \
 -R $hg19_reference \
 --dbsnp $dbsnp \
--I $alignment_dir/dedup_$patient\_$sample\_gatk_recal.bam \
+-I $alignment_dir/$patient\_$sample\_WES_realigned_sorted.bam \
+#-I /tmp/$patient\_$sample\_gatk_recal.bam \
 -L $bed \
 -ip 100 \
+-rf BadCigar \
 --genotyping_mode DISCOVERY \
 -stand_emit_conf 10 \
 -stand_call_conf 30 \
--o $variant_dir/$patient\_$sample\_gatk.vcf
+-o /tmp/$patient\_$sample\_gatk.vcf
 
 ## recalibrate variant quality scores
 java -Xmx16g -jar `which GenomeAnalysisTK.jar` \
 -T VariantRecalibrator \
 -R $hg19_reference \
--input $variant_dir/$patient\_$sample\_gatk.vcf \
+-input /tmp/$patient\_$sample\_gatk.vcf \
 -nt 8 \
 -resource:hapmap,known=false,training=true,truth=true,prior=15.0 $hapmap \
 -resource:omni,known=false,training=true,truth=true,prior=12.0 $omni \
@@ -89,17 +84,17 @@ java -Xmx16g -jar `which GenomeAnalysisTK.jar` \
 -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR \
 -mode SNP \
 -tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
--recalFile $recal_dir/$patient\_$sample\_gatk_recalibrate_SNP.recal \
--tranchesFile $recal_dir/$patient\_$sample\_gatk_recalibrate_SNP.tranches \
--rscriptFile $recal_dir/$patient\_$sample\_gatk_recalibrate_SNP_plots.R
+-recalFile /tmp/$patient\_$sample\_gatk_recalibrate_SNP.recal \
+-tranchesFile /tmp/$patient\_$sample\_gatk_recalibrate_SNP.tranches \
+-rscriptFile /tmp/$patient\_$sample\_gatk_recalibrate_SNP_plots.R
 
 java -Xmx16g -jar `which GenomeAnalysisTK.jar` \
 -T ApplyRecalibration \
 -R $hg19_reference \
--input $variant_dir/$patient\_$sample\_gatk.vcf \
--tranchesFile $recal_dir/$patient\_$sample\_gatk_recalibrate_SNP.tranches \
--recalFile $recal_dir/$patient\_$sample\_gatk_recalibrate_SNP.recal \
--o $recal_dir/$patient\_$sample\_gatk_recalibrate_SNP.vcf \
+-input /tmp/$patient\_$sample\_gatk.vcf \
+-tranchesFile /tmp/$patient\_$sample\_gatk_recalibrate_SNP.tranches \
+-recalFile /tmp/$patient\_$sample\_gatk_recalibrate_SNP.recal \
+-o $variant_dir/$patient\_$sample\_gatk_recalibrate_SNP.vcf \
 --ts_filter_level 99.5 \
 -mode SNP
 
@@ -127,6 +122,9 @@ java -Xmx16g -jar `which GenomeAnalysisTK.jar` \
 #-o $recal_dir/$patient\_$sample\_gatk_final.vcf \
 #--ts_filter_level 99.0 \
 #-mode INDEL
+
+cp /tmp/$patient\_$sample\_gatk_recal.bam $alignment_dir/$patient\_$sample\_gatk_recal.bam
+rm /tmp/$patient\*
 
 exit 0
 
