@@ -12,7 +12,6 @@ do
         counter=$[$counter +1]
 done
 
-#for i in $(find /data/basespace/Projects/$sample/Samples -maxdepth 1 -mindepth 1 -type d)
 for i in $(echo "${ss[@]}" | tr '[:lower:]' '[:upper:]' | tr ' ' '\n' | sort -u | tr '\n' ' ')
 do
         if [ $(echo $i | grep -cim1 DNA) -ge 1 ]; then
