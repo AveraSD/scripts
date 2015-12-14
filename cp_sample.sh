@@ -1,26 +1,33 @@
-
 #!/bin/bash
 
 sample=$1
+path=/data/basespace/Projects/$sample/Samples
+dest=/data/s3/averafastq/patients/$sample/
 
-for i in $(find /data/basespace/Projects/$sample/Samples -maxdepth 1 -mindepth 1 -type d)
+ss=()
+counter=0
+for i in $(find $path -maxdepth 1 -mindepth 1 -type d)
 do
-        NAME1=$(ls $i/Files | head -n 1 | sed 's/.fastq.gz//' | sed 's/_S.*/_1/')
-        NAME2=$(ls $i/Files | head -n 1 | sed 's/.fastq.gz//' | sed 's/_S.*/_2/')
+        ss[$counter]=$(basename $i | sed 's/_Rep.//gI')
+        counter=$[$counter +1]
+done
 
-        if [ $(echo $NAME1 | grep -cim1 DNA) -ge 1 ]; then
-                if [ ! -f "/data/s3/averafastq/patients/$sample/dna/${NAME1}.fastq.gz" ]; then
-                        mkdir -p /data/s3/averafastq/patients/$sample/dna 
-                        cat $i/Files/*R1* > /data/s3/averafastq/patients/$sample/dna/${NAME1}.fastq.gz &
-                        cat $i/Files/*R2* > /data/s3/averafastq/patients/$sample/dna/${NAME2}.fastq.gz
+#for i in $(find /data/basespace/Projects/$sample/Samples -maxdepth 1 -mindepth 1 -type d)
+for i in $(echo "${ss[@]}" | tr '[:lower:]' '[:upper:]' | tr ' ' '\n' | sort -u | tr '\n' ' ')
+do
+        if [ $(echo $i | grep -cim1 DNA) -ge 1 ]; then
+                if [ ! -f "${dest}/dna/${NAME1}.fastq.gz" ]; then
+                        mkdir -p ${dest}/dna
+                        cat $path/${i}_*/Files/*R1* > $dest/dna/${i}_1.fastq.gz &
+                        cat $path/${i}_*/Files/*R2* > $dest/dna/${i}_2.fastq.gz
                 else
                         echo "File exists"
                 fi
-        elif [ $(echo $NAME1 | grep -cim1 RNA) -ge 1 ]; then
-                if [ ! -f "/data/s3/averafastq/patients/$sample/rna/${NAME1}.fastq.gz" ]; then
-                        mkdir -p /data/s3/averafastq/patients/$sample/rna 
-                        cat $i/Files/*R1* > /data/s3/averafastq/patients/$sample/rna/${NAME1}.fastq.gz &
-                        cat $i/Files/*R2* > /data/s3/averafastq/patients/$sample/rna/${NAME2}.fastq.gz
+        elif [ $(echo $i | grep -cim1 RNA) -ge 1 ]; then
+                if [ ! -f "${dest}/rna/${NAME1}.fastq.gz" ]; then
+                        mkdir -p ${dest}/rna
+                        cat $path/${i}_*/Files/*R1* > $dest/rna/${i}_1.fastq.gz &
+                        cat $path/${i}_*/Files/*R2* > $dest/rna/${i}_2.fastq.gz
                 else
                         echo "File exists"
                 fi
