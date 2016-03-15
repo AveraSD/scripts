@@ -30,7 +30,16 @@ for (i in 1:length(files)) {
     var <- var
   } else {
     varDf <- data.frame(do.call(rbind, vars),stringsAsFactors = F)
-    varDf <- cbind(varDf, Sample=gsub('.xml', '', files[i]))
+    varDf <- cbind(varDf, 
+                   Sample=gsub('.xml', '', files[i]),
+                   disease=toupper(as.vector(xmlData$`variant-report`$.attrs['disease'])),
+                   disease_ontology=as.vector(xmlData$`variant-report`$.attrs['disease-ontology']),
+                   gender=as.vector(xmlData$`variant-report`$.attrs['gender']),
+                   pathology_diagnosis=as.vector(xmlData$`variant-report`$.attrs['pathology-diagnosis']),
+                   percent_tumor_nuclei=as.vector(xmlData$`variant-report`$.attrs['percent-tumor-nuclei']),
+                   purity_assessment=as.vector(xmlData$`variant-report`$.attrs['purity-assessment']),
+                   tissue_of_origin=as.vector(xmlData$`variant-report`$.attrs['tissue-of-origin'])
+                   )
     var <- rbind(var, varDf)
   }
   
@@ -47,7 +56,16 @@ for (i in 1:length(files)) {
     cnv <- cnv
   } else {
     cnvDf <- data.frame(do.call(rbind, cnvs), stringsAsFactors = F)
-    cnvDf <- cbind(cnvDf, Sample=gsub('.xml', '', files[i]))
+    cnvDf <- cbind(cnvDf, 
+                   Sample=gsub('.xml', '', files[i]),
+                   disease=toupper(as.vector(xmlData$`variant-report`$.attrs['disease'])),
+                   disease_ontology=as.vector(xmlData$`variant-report`$.attrs['disease-ontology']),
+                   gender=as.vector(xmlData$`variant-report`$.attrs['gender']),
+                   pathology_diagnosis=as.vector(xmlData$`variant-report`$.attrs['pathology-diagnosis']),
+                   percent_tumor_nuclei=as.vector(xmlData$`variant-report`$.attrs['percent-tumor-nuclei']),
+                   purity_assessment=as.vector(xmlData$`variant-report`$.attrs['purity-assessment']),
+                   tissue_of_origin=as.vector(xmlData$`variant-report`$.attrs['tissue-of-origin'])
+                   )
     cnv <- rbind(cnv, cnvDf)
   }
   
@@ -68,7 +86,16 @@ for (i in 1:length(files)) {
     rea <- rea
   } else {
     reasDf <- data.frame(do.call(rbind,reas), stringsAsFactors = F)
-    reasDf <- cbind(reasDf, Sample=gsub('.xml', '', files[i]))
+    reasDf <- cbind(reasDf, 
+                    Sample=gsub('.xml', '', files[i]),
+                    disease=toupper(as.vector(xmlData$`variant-report`$.attrs['disease'])),
+                    disease_ontology=as.vector(xmlData$`variant-report`$.attrs['disease-ontology']),
+                    gender=as.vector(xmlData$`variant-report`$.attrs['gender']),
+                    pathology_diagnosis=as.vector(xmlData$`variant-report`$.attrs['pathology-diagnosis']),
+                    percent_tumor_nuclei=as.vector(xmlData$`variant-report`$.attrs['percent-tumor-nuclei']),
+                    purity_assessment=as.vector(xmlData$`variant-report`$.attrs['purity-assessment']),
+                    tissue_of_origin=as.vector(xmlData$`variant-report`$.attrs['tissue-of-origin'])
+                    )
     rea <- rbind(rea,reasDf)
   }
 }
