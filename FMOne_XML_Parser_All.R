@@ -79,6 +79,7 @@ for (i in 1:length(files)) {
     if(any(names(x)=='rna-evidence.sample')) {
       x <- x[-which(names(x)=='rna-evidence.sample')]
     }
+    x
   })
   if(length(reas)==0) {
     rea <- rea
@@ -104,10 +105,15 @@ for (i in 1:length(files)) {
 var$depth <- as.numeric(var$depth)
 var$percent.reads <- as.numeric(var$percent.reads)
 var$subclonal <- toupper(var$subclonal)
+rownames(var) <- seq(1:dim(var)[1])
 
 cnv$copy.number <- as.numeric(cnv$copy.number)
 cnv$equivocal <- toupper(cnv$equivocal)
 cnv$ratio <- as.numeric(cnv$ratio)
+rownames(cnv) <- seq(1:dim(cnv)[1])
+
+rea$supporting.read.pairs <- as.numeric(rea$supporting.read.pairs)
+rownames(rea) <- seq(1:dim(rea)[1])
 
 # export to xls
 WriteXLS(c('var', 'cnv', "rea"),
