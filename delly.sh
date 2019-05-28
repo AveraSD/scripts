@@ -31,6 +31,7 @@ $delly filter \
 	-o $out/$name.somatic.bcf \
 	-p \
 	-s $out/$tid.txt \
+	-a 0.05 \
 	$out/$name.bcf
 
 
