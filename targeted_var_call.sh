@@ -1,18 +1,19 @@
 #!/usr/bin/bash
 
-snpeff=/home/tmeissner/snpEff/snpEff.jar
-snpsift=/home/tmeissner/snpEff/SnpSift.jar
-
-# use test sample; TL-24-JZYHE7YQ
-
+# read sample id from commandline
 sampleID="$1"
-#sampleID=TL-24-JZYHE7YQ   #TL-24-UIUW5KJJ
-dir=/mnt/ResearchData/MEM/Tempus/$sampleID
-out_dir=/mnt/Research/TempusRNA
+
+#snpeff locatoin
+snpeff=/mnt/data/snpEff/snpEff.jar
+snpsift=/mnt/data/snpEff/snpsift.jar
+
+# set folders
+dir=/mnt/precisiononcology/MEM/Tempus/$sampleID
+out_dir=/mnt/cancergenomics/TempusRNA
 tumorVCFfb=$dir/DNA/$sampleID.soma.freebayes.vcf
 tumorVCFpin=$dir/DNA/$sampleID.soma.pindel.vcf
 bamRNA=$dir/RNA/${sampleID}_T_sorted.bam
-refGenome=/mnt/Research/CCB/database/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/genome_nochr.fa
+refGenome=/mnt/cancergenomics/CCB/database/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/genome_nochr.fa
 
 # creat targets region from vcf
 cat $tumorVCFfb | tail -n +174 | awk '{FS="\t";OFS="\t";print $1,$2-1,$2,$3, etc}' > /tmp/$sampleID.fb.bed
