@@ -5,7 +5,7 @@ sampleID="$1"
 
 #snpeff locatoin
 snpeff=/mnt/data/snpEff/snpEff.jar
-snpsift=/mnt/data/snpEff/snpsift.jar
+snpsift=/mnt/data/snpEff/snpSift.jar
 
 # set folders
 dir=/mnt/precisiononcology/MEM/Tempus/$sampleID
