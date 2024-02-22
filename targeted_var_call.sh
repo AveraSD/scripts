@@ -1,11 +1,27 @@
 #!/usr/bin/bash
 
 # read sample id from commandline
-sampleID="$1"
+#sampleID="$1"
 
-#snpeff locatoin
+#snpeff location
 snpeff=/mnt/data/snpEff/snpEff.jar
 snpsift=/mnt/data/snpEff/snpSift.jar
+
+#read a text file with list of files to process
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <list_of_files.txt>"
+    exit 1
+fi
+
+#Read the text file
+samp_list="$1"
+
+#read each file from the list
+while IFS= read -r sampleID; do
+
+#Final output variable for checking if file exists
+sampout=/mnt/cancergenomics/TempusRNA/$sampleID.RNA.final.tsv
+
 
 # set folders
 dir=/mnt/precisiononcology/MEM/Tempus/$sampleID
@@ -15,7 +31,17 @@ tumorVCFpin=$dir/DNA/$sampleID.soma.pindel.vcf
 bamRNA=$dir/RNA/${sampleID}_T_sorted.bam
 refGenome=/mnt/cancergenomics/CCB/database/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/genome_nochr.fa
 
-# creat targets region from vcf
+#check if output file exists
+if [ -f "$sampout" ]; then
+echo "File exists"
+
+else
+
+#check if RNA exist
+if [ -f "$bamRNA" ]; then
+
+
+# create targets region from vcf
 cat $tumorVCFfb | tail -n +174 | awk '{FS="\t";OFS="\t";print $1,$2-1,$2,$3, etc}' > /tmp/$sampleID.fb.bed
 cat $tumorVCFpin | tail -n +57 | awk '{FS="\t";OFS="\t";print $1,$2-1,$2,$3, etc}' > /tmp/$sampleID.pin.bed
 cat /tmp/$sampleID.fb.bed /tmp/$sampleID.pin.bed > /tmp/$sampleID.bed
@@ -96,4 +122,11 @@ cp /tmp/$sampleID.RNA.final.tsv $out_dir
 #clean tmp
 rm /tmp/$sampleID*
 
+else
+
+echo "RNA does not exist"
+fi
+
+fi
+done < "$samp_list"
 exit 0
