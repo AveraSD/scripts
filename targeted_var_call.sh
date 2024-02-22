@@ -52,8 +52,8 @@ bcftools query -f'%CHROM\t%POS\t%REF,%ALT\n' $tumorVCFpin | bgzip -c > /tmp/$sam
 zcat /tmp/$sampleID.als.fb.tsv.gz /tmp/$sampleID.als.pin.tsv.gz | sort -k1,1 -k2,2n | bgzip -c > /tmp/$sampleID.als.tsv.gz && tabix -s1 -b2 -e2 /tmp/$sampleID.als.tsv.gz
 
 ## save input annotation
-java -jar $snpsift extractFields $tumorVCFfb "CHROM" "POS" "ANN[0].GENE" "ANN[0].HGVS_P" | tail -n +2 > /tmp/$sampleID.in1.anno.tsv
-java -jar $snpsift extractFields $tumorVCFpin "CHROM" "POS" "ANN[0].GENE" "ANN[0].HGVS_P" | tail -n +2 > /tmp/$sampleID.in2.anno.tsv
+/usr/lib/jvm/java-11-openjdk-amd64/bin/java -jar $snpsift extractFields $tumorVCFfb "CHROM" "POS" "ANN[0].GENE" "ANN[0].HGVS_P" | tail -n +2 > /tmp/$sampleID.in1.anno.tsv
+/usr/lib/jvm/java-11-openjdk-amd64/bin/java -jar $snpsift extractFields $tumorVCFpin "CHROM" "POS" "ANN[0].GENE" "ANN[0].HGVS_P" | tail -n +2 > /tmp/$sampleID.in2.anno.tsv
 cat /tmp/$sampleID.in1.anno.tsv /tmp/$sampleID.in2.anno.tsv | sort -k1,1n -k2,2n | awk '!seen[$0]++' | awk -v OFS='\t' '$3 && !$4{ $4="NA" }1' | column -t > /tmp/$sampleID.in.anno.tsv
 
 #call variants using bcftools
@@ -77,11 +77,11 @@ bcftools call \
  bcftools +fill-tags -- -t AF,FORMAT/VAF > /tmp/$sampleID.RNA.vcf 
 
 ## annotate variants with snpeff
-java -Xmx8G -jar $snpeff eff hg19 /tmp/$sampleID.RNA.vcf > /tmp/$sampleID.RNA.anno.vcf
+/usr/lib/jvm/java-11-openjdk-amd64/bin/java -Xmx8G -jar $snpeff eff hg19 /tmp/$sampleID.RNA.vcf > /tmp/$sampleID.RNA.anno.vcf
 
 #convert to table output
 vcftools --vcf /tmp/$sampleID.RNA.anno.vcf --extract-FORMAT-info "VAF" --out /tmp/$sampleID.RNA.anno.vaf.txt 
-java -jar $snpsift extractFields /tmp/$sampleID.RNA.anno.vcf "CHROM" "POS" "ANN[0].GENE" "ANN[0].HGVS_P" | awk -v OFS='\t' '$3 && !$4{ $4="NA" }1' | column -t  > /tmp/$sampleID.RNA.anno.sift.txt 
+/usr/lib/jvm/java-11-openjdk-amd64/bin/java -jar $snpsift extractFields /tmp/$sampleID.RNA.anno.vcf "CHROM" "POS" "ANN[0].GENE" "ANN[0].HGVS_P" | awk -v OFS='\t' '$3 && !$4{ $4="NA" }1' | column -t  > /tmp/$sampleID.RNA.anno.sift.txt 
 paste /tmp/$sampleID.RNA.anno.vaf.txt.VAF.FORMAT /tmp/$sampleID.RNA.anno.sift.txt | awk -v OFS='\t' '{ print $1, $2, $6, $7, $3}'  | tail -n +2 | sort -k1,1n -k2,2n | column -t > /tmp/$sampleID.RNA.tbl.tsv
 
 # get raw depth data at variant locations; convert to 0-based bed style
